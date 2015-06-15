@@ -97,6 +97,43 @@ def login_with_post():
 @users_page.route('/login', methods=['GET'])
 def login_with_get():
     """Authenticate as a user.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+       GET /users/login HTTP/1.1
+       Host: csdms.colorado.edu
+       Content-Type: application/json
+       Authorization: Basic ZXJpYzoxMjM0NTY=
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+       HTTP/1.1 200 OK
+       Content-Type: application/json
+
+       {
+         "_type": "user",
+         "id": 123,
+         "href": "/users/123",
+         "username": "joe_blow",
+         "links": [
+           {
+             "rel": "collection/tags",
+             "href": "/users/123/tags"
+           },
+           {
+            "rel": "collection/models",
+            "href": "/users/123/models"
+           }
+         ]
+       }
+
+    .. sourcecode:: bash
+
+        > curl -u joe_blow:dragon http://rcem.colorado.edu/users/login
     """
 
     auth = request.authorization
