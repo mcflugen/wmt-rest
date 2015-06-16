@@ -27,7 +27,7 @@ def component(name):
         return as_resource(resp)
 
 
-@components_page.route('/<name>/params', methods=['GET', 'OPTIONS'])
+@components_page.route('/<name>/params', methods=['GET'])
 def component_params(name):
     comp = components.get_or_404(name)
 
