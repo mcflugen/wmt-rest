@@ -5,12 +5,13 @@ from flask import current_app, abort
 from ...utils.db import load_palette
 from ..core import db
 
+import local_settings
+
 
 class Component(object):
     def __init__(self):
-        pass
-        #self.palette = load_palette(
-        #    os.path.join(current_app.config['DATABASE_DIR'], 'components'))
+        self.palette = load_palette(
+            os.path.join(local_settings.WMT_DATABASE_DIR, 'components'))
 
     def all(self):
         return self.palette.values()
@@ -19,7 +20,7 @@ class Component(object):
         return self.palette.get(name, None)
 
     def get_or_404(self, name):
-        self.get(name) or abort(404)
+        return self.get(name) or abort(404)
 
     def get_names(self, sort=False):
         names = list(self.palette.keys())
