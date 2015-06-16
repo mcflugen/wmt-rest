@@ -39,7 +39,7 @@ class Component(object):
 
 
 def _read_input_file(name, filename):
-    input_file_dir = os.path.join(current_app.config['DATABASE_DIR'],
+    input_file_dir = os.path.join(local_settings.WMT_DATABASE_DIR,
                                   'components', name, 'files')
     path_to_file = os.path.join(input_file_dir, filename)
     with open(path_to_file, 'r') as file:
