@@ -34,7 +34,7 @@ def component_params(name):
     return as_collection(comp['parameters'])
 
 
-@components_page.route('/<name>/params/<param>', methods=['GET', 'OPTIONS'])
+@components_page.route('/<name>/params/<param>', methods=['GET'])
 def component_param(name, param):
     comp = components.get_or_404(name)
 
