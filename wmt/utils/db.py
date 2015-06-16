@@ -20,7 +20,12 @@ class LoadError(Error):
 
 def _component_names(palette_dir):
     names = set()
-    for item in os.listdir(palette_dir):
+    try:
+        items = os.listdir(palette_dir)
+    except OSError:
+        items = []
+
+    for item in items:
         if os.path.isdir(os.path.join(palette_dir, item)) and not item.startswith('.'):
             names.add(item)
     return names
