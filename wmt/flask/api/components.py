@@ -50,20 +50,20 @@ def component_files(name):
     return as_collection(components.input(name) or abort(404))
 
 
-@components_page.route('/<name>/files/<file>', methods=['GET', 'OPTIONS'])
+@components_page.route('/<name>/files/<file>', methods=['GET'])
 def component_file(name, file):
     files = components.input(name) or abort(404)
 
     return as_resource(files.get(file, None) or abort(404))
 
 
-@components_page.route('/<name>/inputs', methods=['GET', 'OPTIONS'])
+@components_page.route('/<name>/inputs', methods=['GET'])
 def component_inputs(name):
     comp = components.get_or_404(name)
     return as_resource(comp.get('uses', []))
 
 
-@components_page.route('/<name>/outputs', methods=['GET', 'OPTIONS'])
+@components_page.route('/<name>/outputs', methods=['GET'])
 def component_outputs(name):
     comp = components.get_or_404(name)
     return as_resource(comp.get('provides', []))
