@@ -36,7 +36,7 @@ def component_params(name):
 
 @components_page.route('/<name>/params/<param>', methods=['GET', 'OPTIONS'])
 def component_param(name, param):
-    comp = comp_db.get_or_404(name)
+    comp = components.get_or_404(name)
 
     for p in comp['parameters']:
         if p['key'] == param:
