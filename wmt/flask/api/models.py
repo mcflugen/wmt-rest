@@ -141,10 +141,100 @@ def get_tags(id):
 @models_page.route('/<int:id>/tags', methods=['POST'])
 @login_required
 def add_a_tag(id):
+    """Add a tag to a model.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        POST /models/2/tags HTTP/1.1
+        Host: rcem.colorado.edu
+        Cookie: remember_token=eric|64b60ede1c023118a8d6b97b1b5b93fb71b904d9
+        Content-Type: application/json
+        Content-Length: 9
+
+        {"id": 1}
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        [
+          {
+            "@type": "tag",
+            "href": "/tags/1",
+            "id": 1,
+            "links": [
+              {
+                "href": "/models/2",
+                "rel": "resource/models"
+              }
+            ],
+            "tag": "foobar",
+            "user": {
+              "href": "/users/2"
+            }
+          }
+        ]
+
+    .. sourcecode:: bash
+
+        > curl -X POST -H "Content-Type: application/json" -b "remember_token=eric|64b60ede1c023118a8d6b97b1b5b93fb71b904d9" --data '{"id": 1}' http://rcem.colorado.edu/models/2/tags
+
+    """
     model = models.get_or_404(id)
 
     data = deserialize_request(request, fields=['id'])
     tag = tags.get(data['id']) or abort(400)
     models.append(model, tags=tag)
+
+    return models.jsonify_collection(model.tags)
+
+
+@models_page.route('/<int:id>/tags/<int:tag_id>', methods=['DELETE'])
+@login_required
+def remove_a_tag(id, tag_id):
+    """Remove a tag from a model.
+
+    **Example request**:
+
+    .. sourcecode:: http
+
+        DELETE /models/2/tags/2 HTTP/1.1
+        Host: rcem.colorado.edu
+        Accept: */*
+        Cookie: remember_token=eric|64b60ede1c023118a8d6b97b1b5b93fb71b904d9
+        Content-Type: application/json
+
+    **Example response**:
+
+    .. sourcecode:: http
+
+        [
+          {
+            "@type": "tag",
+            "href": "/tags/1",
+            "id": 1,
+            "links": [
+              {
+                "href": "/models/2",
+                "rel": "resource/models"
+              }
+            ],
+            "tag": "foobar",
+            "user": {
+              "href": "/users/2"
+            }
+          }
+        ]
+
+    .. sourcecode:: bash
+
+        curl -X DELETE -H "Content-Type: application/json" -b "remember_token=eric|64b60ede1c023118a8d6b97b1b5b93fb71b904d9" http://rcem.colorado.edu/models/2/tags/2
+    """
+    model = models.get_or_404(id)
+
+    tag = tags.get(tag_id) or abort(400)
+    models.remove(model, tags=tag)
 
     return models.jsonify_collection(model.tags)
