@@ -3,6 +3,7 @@ from flask import json, jsonify
 from flask import g, Response, request, abort
 from flask import current_app
 
+from ..core import deserialize_request
 from ..utils import as_resource, jsonify_collection
 from ..services import names
 
@@ -22,6 +23,12 @@ def show():
     order = request.args.get('order', 'asc')
 
     return names.jsonify_collection(names.all(sort=sort, order=order))
+
+
+@names_page.route('/', methods=['POST'])
+def add():
+    data = deserialize_request(request, fields=['name'])
+    return names.create(data['name']).jsonify()
 
 
 @names_page.route('/<int:id>')
