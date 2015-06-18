@@ -28,7 +28,14 @@ def show():
 @names_page.route('/', methods=['POST'])
 def add():
     data = deserialize_request(request, fields=['name'])
-    return names.create(data['name']).jsonify()
+    return names.create(name=data['name']).jsonify()
+
+
+@names_page.route('/<int:id>', methods=['DELETE'])
+def remove(id):
+    name = names.get_or_404(id)
+    names.delete(name)
+    return '', 204
 
 
 @names_page.route('/<int:id>')
