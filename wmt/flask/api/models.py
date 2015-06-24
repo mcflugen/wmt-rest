@@ -130,6 +130,12 @@ def uploads(id):
 @models_page.route('/search')
 def search():
     query = dict(request.args.items())
+    if 'tag' in query:
+        matched = []
+        for m in models.all():
+            if query['tag'] in m.tags:
+                matched.append(matched)
+        return models.jsonify_collection(matched)
     return models.jsonify_collection(models.find(**query))
 
 
