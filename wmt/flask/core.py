@@ -47,7 +47,7 @@ class JsonMixin(object):
     def fields(self):
         import inspect
         members = inspect.getmembers(self,
-                                     lambda p: not inspect.isroutine(p))    
+                                     lambda p: not inspect.isroutine(p))
         fields = []
         for member in members:
             if not member[0].startswith('_'):
@@ -162,6 +162,12 @@ class Service(object):
         self._is_instance_or_raise(model)
         for key, value in kwds.items():
             getattr(model, key).append(value)
+        db.session.commit()
+
+    def remove(self, model, **kwds):
+        self._is_instance_or_raise(model)
+        for key, value in kwds.items():
+            getattr(model, key).remove(value)
         db.session.commit()
 
     def delete(self, model):
