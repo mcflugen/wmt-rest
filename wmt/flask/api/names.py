@@ -44,6 +44,16 @@ def name(id):
     return name.jsonify()
 
 
+@names_page.route('/<int:id>/used', methods=['GET'])
+def get_used_by(id):
+    return names.jsonify_collection(names.get_or_404(id).components_that_use)
+
+
+@names_page.route('/<int:id>/provided', methods=['GET'])
+def get_provided_by(id):
+    return names.jsonify_collection(names.get_or_404(id).components)
+
+
 @names_page.route('/search')
 def search():
     contains = request.args.get('contains', None)
