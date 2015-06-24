@@ -22,6 +22,9 @@ def show():
 @tags_page.route('/', methods=['POST'])
 @login_required
 def add():
+    """
+    > curl -X POST -H "Content-Type: application/json" -b "remember_token=eric|64b60ede1c023118a8d6b97b1b5b93fb71b904d9" --data '{"tag": "foo"}' http://rcem.colorado.edu/tags/
+    """
     data = deserialize_request(request, fields=['tag'])
     owner = users.first(username=current_user.get_id())
     if tags.first(tag=data['tag'], owner=owner.id):
