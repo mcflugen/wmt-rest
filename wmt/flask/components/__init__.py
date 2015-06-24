@@ -5,5 +5,5 @@ from .models import Component
 
 
 
-class ComponentsService(Component):
-    pass
+class ComponentsService(Service):
+    __model__ = Component
