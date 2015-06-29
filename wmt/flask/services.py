@@ -5,6 +5,7 @@ from .sims import SimsService
 from .components import ComponentsService
 from .models import ModelsService
 from .parameters import ParametersService
+from .files import FilesService
 
 
 users = UsersService()
@@ -14,3 +15,4 @@ sims = SimsService()
 components = ComponentsService()
 models = ModelsService()
 parameters = ParametersService()
+files = FilesService()
