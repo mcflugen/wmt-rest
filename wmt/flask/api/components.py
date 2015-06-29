@@ -28,8 +28,6 @@ def add():
     data = deserialize_request(request, fields=['name', 'author', 'summary',
                                                'url', 'version', 'doi'])
     return components.create(**data).jsonify()
-    #return components.create(name=data['name']).jsonify()
-    #return models.create(data['name'], data['json'], owner=owner).jsonify()
 
 
 @components_page.route('/<int:id>', methods=['DELETE'])
@@ -96,12 +94,14 @@ def get_params(id):
     return components.jsonify_collection(components.get_or_404(id).parameters)
 
 
-@components_page.route('/<int:id>/params', methods=['PUT'])
+@components_page.route('/<int:id>/params', methods=['POST'])
 def add_param(id):
     component = components.get_or_404(id)
-    data = deserialize_request(request, fields=['id'])
-    param = parameters.get(data['id']) or abort(400)
-    components.append(component, parameters=param)
+    data = deserialize_request(request, fields=['key', 'description'])
+
+    if not component.parameters.filter_by(key=data['key']).first():
+        param = parameters.create(**data)
+        components.append(component, parameters=param)
 
     return components.jsonify_collection(component.parameters)
 
@@ -110,7 +110,8 @@ def add_param(id):
 def remove_param(id, param_id):
     component = components.get_or_404(id)
     param = parameters.get(param_id) or abort(400)
-    components.remove(component, parameters=param)
+    if param.component_id == id:
+        parameters.delete(param)
 
     return components.jsonify_collection(component.parameters)
 
