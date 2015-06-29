@@ -2,7 +2,7 @@ from flask import Blueprint
 from flask import g, request, abort
 
 from ..utils import as_resource, as_collection
-from ..services import components, names
+from ..services import components, names, parameters
 from ..core import deserialize_request
 
 components_page = Blueprint('components', __name__)
@@ -25,8 +25,10 @@ def show():
 
 @components_page.route('/', methods=['POST'])
 def add():
-    data = deserialize_request(request, fields=['name'])
-    return components.create(name=data['name']).jsonify()
+    data = deserialize_request(request, fields=['name', 'author', 'summary',
+                                               'url', 'version', 'doi'])
+    return components.create(**data).jsonify()
+    #return components.create(name=data['name']).jsonify()
     #return models.create(data['name'], data['json'], owner=owner).jsonify()
 
 
@@ -89,11 +91,28 @@ def add_uses(id):
 #        return as_resource(resp)
 
 
-@components_page.route('/<name>/params', methods=['GET'])
-def component_params(name):
-    comp = components.get_or_404(name)
+@components_page.route('/<int:id>/params', methods=['GET'])
+def get_params(id):
+    return components.jsonify_collection(components.get_or_404(id).parameters)
 
-    return as_collection(comp['parameters'])
+
+@components_page.route('/<int:id>/params', methods=['PUT'])
+def add_param(id):
+    component = components.get_or_404(id)
+    data = deserialize_request(request, fields=['id'])
+    param = parameters.get(data['id']) or abort(400)
+    components.append(component, parameters=param)
+
+    return components.jsonify_collection(component.parameters)
+
+
+@components_page.route('/<int:id>/params/<int:param_id>', methods=['DELETE'])
+def remove_param(id, param_id):
+    component = components.get_or_404(id)
+    param = parameters.get(param_id) or abort(400)
+    components.remove(component, parameters=param)
+
+    return components.jsonify_collection(component.parameters)
 
 
 @components_page.route('/<name>/params/<param>', methods=['GET'])

@@ -9,7 +9,8 @@ import local_settings
 
 
 class ComponentJsonSerializer(JsonMixin):
-    __public_fields__ = set(['href', 'id', 'name'])
+    __public_fields__ = set(['href', 'id', 'name', 'author', 'doi',
+                             'summary', 'url', 'version'])
 
 
 class Component(ComponentJsonSerializer, db.Model):
@@ -18,17 +19,19 @@ class Component(ComponentJsonSerializer, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128))
-    #author = db.Column(db.String(128))
-    #doi = db.Column(db.String(128))
-    #summary = db.Column(db.String(2048))
-    #url = db.Column(db.String(128))
-    #version = db.Column(db.String(128))
+    author = db.Column(db.String(128))
+    doi = db.Column(db.String(128))
+    summary = db.Column(db.String(2048))
+    url = db.Column(db.String(128))
+    version = db.Column(db.String(128))
     #uses = db.relationship('Name', secondary='names', backref='names',
     #                       lazy='dynamic')
     provides = db.relationship('Name', secondary='provides_names',
                                backref='provides_names', lazy='dynamic')
     uses = db.relationship('Name', secondary='uses_names',
                            backref='uses_names', lazy='dynamic')
+    parameters = db.relationship('Parameter', backref='parameter_of',
+                                 lazy='dynamic')
 
     #def __init__(self):
     #    self.palette = load_palette(
@@ -62,6 +65,9 @@ class Component(ComponentJsonSerializer, db.Model):
         for name in self.uses:
             links.append(dict(rel='resource/uses',
                               href=url_for('names.name', id=name.id)))
+        for name in self.parameters:
+            links.append(dict(rel='resource/parameter',
+                              href=url_for('parameters.parameter', id=name.id)))
         return links
 
     #@property
