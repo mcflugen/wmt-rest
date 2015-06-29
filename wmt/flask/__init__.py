@@ -59,7 +59,7 @@ def create_app(settings_override=None, register_security_blueprint=True,
     @app.route('/')
     def site_map():
         COLLECTIONS = ['users', 'names', 'components', 'models', 'tags',
-                       'sims']
+                       'sims', 'parameters']
         map = {"@type": "api", "href": url_for('.site_map')}
         links = []
         for rel in COLLECTIONS:

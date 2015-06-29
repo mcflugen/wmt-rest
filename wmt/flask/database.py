@@ -12,7 +12,7 @@ def start_engines():
 
     database_dir = current_app.config['DATABASE_DIR']
 
-    for db in ['names', 'tag', 'users', 'wmt', 'submission']:
+    for db in ['names', 'tag', 'users', 'wmt', 'submission', 'parameter']:
         engine = create_engine(
             'sqlite:/%s/%s.db' % (database_dir, db),
             #'sqlite:////data/web/htdocs/wmt/api/v1/db/%s.db' % db,

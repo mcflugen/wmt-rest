@@ -40,7 +40,7 @@ start_engines()
 
 
 from .views import (names_page, tags_page, users_page, models_page,
-                    components_page, sims_page)
+                    components_page, sims_page, parameters_page)
 from .utils import as_resource, as_collection
 
 PAGES = [
@@ -50,6 +50,7 @@ PAGES = [
     (models_page, 'models'),
     (components_page, 'components'),
     (sims_page, 'sims'),
+    (parameters_page, 'parameters'),
 ]
 for page in PAGES:
     app.register_blueprint(page[0], url_prefix='/' + page[1])

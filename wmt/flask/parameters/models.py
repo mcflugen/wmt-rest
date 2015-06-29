@@ -1,0 +1,43 @@
+import os
+from datetime import datetime
+from uuid import uuid4
+import json
+from distutils.dir_util import mkpath
+
+from flask import current_app, url_for
+
+from ..core import db, JsonMixin
+
+
+class ParameterJsonSerializer(JsonMixin):
+    __hidden_fields__ = set()
+    __public_fields__ = set(['id', 'key', 'description', 'href'])
+
+
+class Parameter(ParameterJsonSerializer, db.Model):
+    __tablename__ = 'parameters'
+    __bind_key__ = 'parameters'
+
+    id = db.Column(db.Integer, primary_key=True)
+    component_id = db.Column(db.Integer,
+                             db.ForeignKey('components.id',
+                                           info={'bind_key': 'names'}))
+    key = db.Column(db.String(128))
+    description = db.Column(db.String(2048))
+
+    @property
+    def href(self):
+        return url_for('parameters.parameter', id=self.id)
+
+    @property
+    def link_objects(self):
+        if self.component_id:
+            return {
+                'component': {'href': url_for('components.component',
+                                              id=self.component_id)},
+            }
+        else:
+            return {}
+
+    def __repr__(self):
+        return '<Parameter %r>' % self.key

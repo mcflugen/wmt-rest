@@ -4,6 +4,7 @@ from .tags import TagsService
 from .sims import SimsService
 from .components import ComponentsService
 from .models import ModelsService
+from .parameters import ParametersService
 
 
 users = UsersService()
@@ -12,3 +13,4 @@ tags = TagsService()
 sims = SimsService()
 components = ComponentsService()
 models = ModelsService()
+parameters = ParametersService()

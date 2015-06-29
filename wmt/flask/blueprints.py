@@ -8,7 +8,8 @@ def register_blueprints(app, package_name, package_path):
     rv = []
 
     #for _, name, _ in pkgutil.iter_modules(package_path):
-    for name in ['users', 'names', 'tags', 'sims', 'components', 'models']:
+    for name in ['users', 'names', 'tags', 'sims', 'components', 'models',
+                 'parameters']:
         m = importlib.import_module('%s.api.%s' % (package_name, name))
         for item in dir(m):
             item = getattr(m, item)

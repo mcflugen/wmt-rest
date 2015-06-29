@@ -45,7 +45,8 @@ sha512_crypt__default_rounds = 100000
                 'tags':  self.sqlite_db_path('tag.db'),
                 'users':  self.sqlite_db_path('users.db'),
                 'sims':  self.sqlite_db_path('submission.db'),
-                'models':  self.sqlite_db_path('models.db'), }
+                'models':  self.sqlite_db_path('models.db'),
+                'parameters':  self.sqlite_db_path('parameters.db'), }
 
     def sqlite_db_path(self, filename):
         if self._db_dir is not None:
