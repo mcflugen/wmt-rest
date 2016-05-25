@@ -8,13 +8,6 @@ from ..core import deserialize_request
 components_page = Blueprint('components', __name__)
 
 
-#@components_page.route('/', methods=['GET', 'OPTIONS'])
-#def show():
-#    return as_collection(components.get_names(sort=True))
-#    #return components.jsonify_collection(components.all(sort=sort, order=order))
-#    #return components.jsonify_collection(components.all())
-
-
 @components_page.route('/', methods=['GET', 'OPTIONS'])
 def show():
     sort = request.args.get('sort', 'id')
@@ -74,21 +67,6 @@ def add_uses(id):
     return components.jsonify_collection(component.uses)
 
 
-#@components_page.route('/<name>', methods=['GET', 'OPTIONS'])
-#def component(name):
-#    key = request.args.get('key', None)
-#
-#    comp = components.get_or_404(name)
-#
-#    if key is not None:
-#        return as_resource(comp.get(key, None) or abort(400))
-#    else:
-#        resp = {}
-#        for key in ['doi', 'author', 'url', 'summary', 'version', 'id', ]:
-#            resp[key] = comp[key]
-#        return as_resource(resp)
-
-
 @components_page.route('/<int:id>/params', methods=['GET'])
 def get_params(id):
     return components.jsonify_collection(components.get_or_404(id).parameters)
@@ -116,36 +94,28 @@ def remove_param(id, param_id):
     return components.jsonify_collection(component.parameters)
 
 
-@components_page.route('/<name>/params/<param>', methods=['GET'])
-def component_param(name, param):
-    comp = components.get_or_404(name)
-
-    for p in comp['parameters']:
-        if p['key'] == param:
-            return as_resource(p)
-
-    abort(404)
+@components_page.route('/<int:id>/files', methods=['GET', 'OPTIONS'])
+def files(id):
+    return components.jsonify_collection(components.get_or_404(id).files)
 
 
-@components_page.route('/<name>/files', methods=['GET', 'OPTIONS'])
-def component_files(name):
-    return as_collection(components.input(name) or abort(404))
+@components_page.route('/<int:id>/files', methods=['POST'])
+def add_file(id):
+    component = components.get_or_404(id)
+    data = deserialize_request(request, fields=['name', 'contents'])
+
+    if not component.parameters.filter_by(key=data['name']).first():
+        file = files.create(**data)
+        components.append(component, files=file)
+
+    return components.jsonify_collection(component.files)
 
 
-@components_page.route('/<name>/files/<file>', methods=['GET'])
-def component_file(name, file):
-    files = components.input(name) or abort(404)
+@components_page.route('/<int:id>/files/<int:file_id>', methods=['DELETE'])
+def remove_file(id, file_id):
+    component = components.get_or_404(id)
+    file = files.get(file_id) or abort(400)
+    if files.component_id == id:
+        files.delete(file)
 
-    return as_resource(files.get(file, None) or abort(404))
-
-
-@components_page.route('/<name>/inputs', methods=['GET'])
-def component_inputs(name):
-    comp = components.get_or_404(name)
-    return as_resource(comp.get('uses', []))
-
-
-@components_page.route('/<name>/outputs', methods=['GET'])
-def component_outputs(name):
-    comp = components.get_or_404(name)
-    return as_resource(comp.get('provides', []))
+    return components.jsonify_collection(component.files)
