@@ -28,7 +28,11 @@ def show():
 @names_page.route('/', methods=['POST'])
 def add():
     data = deserialize_request(request, fields=['name'])
-    return names.create(name=data['name']).jsonify()
+    name = names.first(name=data['name'])
+    if name is None:
+        name = names.create(data['name'])
+    return name.jsonify()
+    #return names.create(name=data['name']).jsonify()
 
 
 @names_page.route('/<int:id>', methods=['DELETE'])
@@ -56,6 +60,12 @@ def get_provided_by(id):
 
 @names_page.route('/search')
 def search():
+    long_name = request.args.get('is', None)
+    if long_name is None:
+        return names.jsonify_collection(names.all())
+
+    return names.jsonify_collection(names.find(name=long_name))
+
     contains = request.args.get('contains', None)
     if contains is not None:
         names_list = names.contains(contains)
