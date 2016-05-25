@@ -18,7 +18,7 @@ class Component(ComponentJsonSerializer, db.Model):
     __bind_key__ = 'names'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128))
+    name = db.Column(db.String(128), unique=True)
     author = db.Column(db.String(128))
     doi = db.Column(db.String(128))
     summary = db.Column(db.String(2048))
@@ -32,6 +32,7 @@ class Component(ComponentJsonSerializer, db.Model):
                            backref='uses_names', lazy='dynamic')
     parameters = db.relationship('Parameter', backref='parameter_of',
                                  lazy='dynamic')
+    files = db.relationship('File', backref='file_of', lazy='dynamic')
 
     #def __init__(self):
     #    self.palette = load_palette(
@@ -68,6 +69,9 @@ class Component(ComponentJsonSerializer, db.Model):
         for name in self.parameters:
             links.append(dict(rel='resource/parameter',
                               href=url_for('parameters.parameter', id=name.id)))
+        for name in self.files:
+            links.append(dict(rel='resource/file',
+                              href=url_for('files.file', id=name.id)))
         return links
 
     #@property
@@ -76,14 +80,14 @@ class Component(ComponentJsonSerializer, db.Model):
     #        'user': { 'href': url_for('users.user', id=self.owned_by.id)},
     #    }
 
-    def input(self, name):
-        filenames = self.get(name)['files']
+    #def input(self, name):
+    #    filenames = self.get(name)['files']
 
-        files = {}
-        for (fid, filename) in enumerate(filenames):
-            files[filename] = _read_input_file(name, filename)
+    #    files = {}
+    #    for (fid, filename) in enumerate(filenames):
+    #        files[filename] = _read_input_file(name, filename)
 
-        return files
+    #    return files
 
 
 def _read_input_file(name, filename):
