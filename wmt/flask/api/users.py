@@ -1,10 +1,13 @@
 import requests
 
-from flask import Blueprint
+from flask import Blueprint, current_app, session
 from flask import json, jsonify
-from flask import g, request, url_for
+from flask import g, request, url_for, session, render_template, flash, redirect
 from flask.ext.login import current_user
+#from flask.ext.openid import OpenID
 from flask_login import login_user, logout_user
+
+from openid.extensions import pape
 
 from ..services import users
 from ..models.models import Model
@@ -15,6 +18,8 @@ from ..core import deserialize_request
 
 
 users_page = Blueprint('users', __name__)
+
+#oid = OpenID(current_app, safe_roots=[], extension_responses=[pape.Response])
 
 
 class User(object):
@@ -34,7 +39,179 @@ class User(object):
         return self._id
 
 
-@users_page.route('/login', methods=['POST'])
+#from wmt_wsgi import oid
+
+from flask_oauth import OAuth, OAuthRemoteApp, OAuthException, parse_response
+
+
+class MWOAuthRemoteApp(OAuthRemoteApp):
+     def handle_oauth1_response(self):
+        """Handles an oauth1 authorization response.  The return value of
+        this method is forwarded as first argument to the handling view
+        function.
+        """
+        client = self.make_client()
+        resp, content = client.request('%s&oauth_verifier=%s' % (
+            self.expand_url(self.access_token_url),
+            request.args['oauth_verifier'],
+        ), self.access_token_method)
+        print resp, content
+        data = parse_response(resp, content)
+        if not self.status_okay(resp):
+            raise OAuthException('Invalid response from ' + self.name,
+                                 type='invalid_response', data=data)
+        return data
+
+
+oauth = OAuth()
+csdms = MWOAuthRemoteApp(
+    oauth,
+    'csdms',
+    base_url='http://csdms.colorado.edu',
+    request_token_url='http://csdms.colorado.edu/w/index.php',
+    request_token_params = {'title': 'Special:OAuth/initiate',
+                            'oauth_callback': 'oob'},
+    access_token_url='http://csdms.colorado.edu/w/index.php?title=Special:OAuth/token',
+    authorize_url='http://csdms.colorado.edu/wiki/Special:OAuth/authorize',
+
+    # WMT-Web
+    #consumer_key='7569b56adf97d65804bdec76424f92d4',
+    #consumer_secret='d0ce83bcc938cba964cdb96d7411e752c6c7a580',
+
+    # WMT
+    consumer_key='a548a9eec46cbb1333ef0d7eed4c9b46',
+    consumer_secret='2fa73c563aff08173c4190062d453c851a008bab',
+)
+oauth.remote_apps['csdms'] = csdms
+
+
+@csdms.tokengetter
+def get_mwo_token(token=None):
+    return session.get('mwo_token')
+
+
+@users_page.route('/logout')
+def logout():
+    session['mwo_token'] = None
+    session['username'] = None
+    if 'next' in request.args:
+        return redirect(request.args['next'])
+    return 'Logged out!'
+
+
+@users_page.route('/login')
+def login():
+    redirector = csdms.authorize()
+
+    if 'next' in request.args:
+        oauth_token = session[csdms.name + '_oauthtok'][0]
+        session[oauth_token + '_target'] = request.args['next']
+
+    redirector.headers['Location'] += '&oauth_consumer_key=' + csdms.consumer_key
+    return redirector
+    #return csdms.authorize()
+    #return csdms.authorize(callback=url_for('users.oauth_authorized',
+    #                                        next=request.args.get('next') or request.referrer or None))
+
+
+#@users_page.route('/oauth-callback')
+@users_page.route('/')
+@csdms.authorized_handler
+def oauth_authorized(resp):
+    next_url_key = request.args['oauth_token'] + '_target'
+    default_url = url_for('users.whoami')
+
+    next_url = session.pop(next_url_key, default_url)
+
+    if resp is None:
+        raise ValueError('unable to authorize')
+        return redirect(next_url)
+
+    try:
+        session['mwo_token'] = (
+            resp['oauth_token'],
+            resp['oauth_token_secret']
+        )
+    except KeyError:
+        raise ValueError(resp)
+
+    #session['csdms_user'] = resp['screen_name']
+    session['csdms_user'] = get_current_user(cached=False)
+
+    g.user = users.first(username=session['csdms_user'])
+
+    if g.user is None:
+        g.user = users.create(session['csdms_user'], session['csdms_user'])
+
+    return redirect(next_url)
+
+
+def query(api_query, url=None):
+    """ e.g. {'action': 'query', 'meta': 'userinfo'}. format=json not required
+        function returns a python dict that resembles the api's json response
+    """
+    import urllib
+
+    api_query['format'] = 'json'
+    url = url or 'http://csdms.colorado.edu/w'
+
+    #return requests.post('http://csdms.colorado.edu/w/api.php?action=query&meta=userinfo&uiprop=email&format=json').json()
+    return csdms.post(url + "/api.php?" + urllib.urlencode(api_query),
+                      content_type="text/plain").data
+
+
+def get_current_user(cached=True):
+    if cached:
+        return session.get('username')
+
+    try:
+        data = query({'action': 'query', 'meta': 'userinfo', 'uiprop': 'email'})
+        #raise ValueError(data['query']['userinfo'])
+        session['username'] = get_user_email(data['query']['userinfo']['name'])
+    except KeyError:
+        #raise ValueError((data['query']['userinfo'].keys(),
+        #                  data['query']['userinfo']['name']))
+        session['username'] = None
+        if data['error']['code'] == "mwoauth-invalid-authorization":
+            flash(u'Access to this application was revoked. Please re-login!')
+        else:
+            raise
+    except OAuthException:
+        session['username'] = None
+    return session['username']
+
+
+def get_user_email(user):
+    import urllib
+
+    url = 'http://csdms.colorado.edu/w'
+    api_query = {
+        'action': 'ask',
+        'query': '[[User:%s]]|?Confirm email member' % user,
+        'format': 'json'
+    }
+    resp = requests.get(url + '/api.php?' + urllib.urlencode(api_query)).json()
+
+    email = resp['query']['results']['User:%s' % user]['printouts']['Confirm email member'][0]
+
+    return email.split(':')[-1]
+
+
+@users_page.before_request
+def before_request():
+    g.user = None
+    if 'openid' in session:
+        #g.user = User.query.filter_by(openid=session['openid']).first()
+        g.user = users.first(openid=session['openid'])
+
+
+#@users_page.after_request
+#def after_request(response):
+#    db_session.remove()
+#    return response
+
+
+@users_page.route('/_login', methods=['POST'])
 def login_with_post():
     """Authenticate as a user.
 
@@ -94,7 +271,7 @@ def login_with_post():
         raise AuthenticationError()
 
 
-@users_page.route('/login', methods=['GET'])
+@users_page.route('/_login', methods=['GET'])
 def login_with_get():
     """Authenticate as a user.
 
@@ -156,8 +333,8 @@ def login_with_get():
     raise AuthenticationError()
 
 
-@users_page.route('/logout', methods=['GET'])
-def logout():
+@users_page.route('/_logout', methods=['GET'])
+def _logout():
     """Log out the currently authenticated user.
 
     **Example request**:
@@ -171,7 +348,7 @@ def logout():
     return "", 204
 
 
-@users_page.route('/', methods=['GET'])
+@users_page.route('/show', methods=['GET'])
 def show():
     """Get a list of user instances for all users.
 
@@ -448,8 +625,10 @@ def search_models(id):
 def whoami():
     """Returns the name of the currently authenticated user.
     """
-    user = users.first(username=current_user.get_id())
+    #user = users.first(username=current_user.get_id())
+    user = users.first(username=get_current_user(cached=False))
     if user:
         return user.jsonify()
+        #return user, 200
     else:
         return '', 204

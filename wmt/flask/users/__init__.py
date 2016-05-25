@@ -8,8 +8,9 @@ class UsersService(Service):
     __model__ = User
 
     def create(self, username, password):
-        encrypted = current_app.config['pw'].encrypt(password)
-        return super(UsersService, self).create(username, encrypted)
+        return super(UsersService, self).create(username, password)
+        #encrypted = current_app.config['pw'].encrypt(password)
+        #return super(UsersService, self).create(username, encrypted)
 
     def contains(self, needle):
         return db.query.filter(db.username.like('%' + needle + '%'))

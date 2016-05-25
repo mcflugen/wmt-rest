@@ -1,7 +1,10 @@
 import os
 
-from flask import Flask, url_for, jsonify
+from flask import Flask, url_for, jsonify, g, request
 from flask_login import LoginManager
+from flask.ext.openid import OpenID
+
+from openid.extensions import pape
 
 from passlib.context import CryptContext
 
@@ -30,7 +33,9 @@ class User(object):
 
 def create_app(settings_override=None, register_security_blueprint=True,
                wmt_root_path=None):
-    app = Flask(__name__, instance_relative_config=True)
+    app = Flask(__name__, instance_relative_config=True,
+               template_folder='/data/web/htdocs/wmt/api/rest/bin/templates')
+    #oid = OpenID(app, safe_roots=[], extension_responses=[pape.Response])
 
     login_manager = LoginManager()
     login_manager.init_app(app)

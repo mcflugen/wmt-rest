@@ -1,7 +1,12 @@
 import sqlite3
 
+from openid.extensions import pape
+
 from flask import Flask, g, session, request, redirect, url_for
 from flask_login import LoginManager
+from flask.ext.openid import OpenID
+
+from openid.extensions import pape
 #from flaskext.uploads import UploadSet, All, configure_uploads
 
 from passlib.context import CryptContext
@@ -28,6 +33,8 @@ sha512_crypt__default_rounds = 100000
 
 app = Flask(__name__)
 app.config.from_object(__name__)
+
+oid = OpenID(app, safe_roots=[], extension_responses=[pape.Response])
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -79,9 +86,9 @@ class User(object):
         return self._id
 
 
-@login_manager.user_loader
-def load_user(userid):
-    return User(userid)
+#@login_manager.user_loader
+#def load_user(userid):
+#    return User(userid)
 
 
 def site_map():
@@ -98,13 +105,40 @@ def site_map():
     return routes
 
 
-@app.route('/')
-def index():
-    if request.authorization is not None:
-        redirect(url_for('login'))
-        return as_resource(session['username'])
-    else:
-        return as_collection(site_map())
+#@app.route('/')
+#def index():
+#    if request.authorization is not None:
+#        redirect(url_for('login'))
+#        return as_resource(session['username'])
+#    else:
+#        return as_collection(site_map())
+
+
+@app.before_request
+def before_request():
+    g.user = None
+    if 'openid' in session:
+        g.user = User.query.filter_by(openid=session['openid']).first()
+
+
+@app.after_request
+def after_request(response):
+    db_session.remove()
+    return response
+
+
+@app.route('/', methods=['POST'])
+@oid.loginhandler
+def login():
+    if g.user is not None:
+        user = users.first(username=current_user.get_id())
+        return user.jsonify()
+    if request.method == 'POST':
+        openid = request.form.get('openid')
+        if openid:
+            pape_req = pape.Request([])
+            return oid.try_login(openid, ask_for=['email'],
+                                 extension=[pape_req])
 
 
 #def connect_db():

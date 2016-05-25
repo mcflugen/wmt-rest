@@ -145,7 +145,8 @@ def load_palette(palette_dir):
         path_to_db = os.path.join(palette_dir, name, 'db')
         try:
             palette[name] = _construct_component_from_db(path_to_db)
-        except LoadError:
+        #except LoadError:
+        except Exception:
             print('%s: unable to load' % name, file=STDERR)
 
     return palette
