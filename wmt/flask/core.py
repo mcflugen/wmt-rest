@@ -11,8 +11,9 @@ from .errors import (InvalidJsonError, InvalidFieldError, MissingFieldError,
 db = SQLAlchemy()
 
 
-def deserialize_request(request, fields=None, require='all'):
+def deserialize_request(request, fields=None, require='all', unknown='raise'):
     assert(require in ['all', 'none', 'some'])
+    assert(unknown in ['raise', 'remove'])
 
     if fields is None:
         fields = set()
@@ -30,7 +31,11 @@ def deserialize_request(request, fields=None, require='all'):
         raise WrongJsonError('resource')
 
     if not provided_fields.issubset(fields):
-        raise InvalidFieldError('resource', provided_fields - fields)
+        #pass
+        for field in provided_fields - fields:
+            data.pop(field)
+        provided_fields = set(data.keys())
+        #raise InvalidFieldError('resource', provided_fields - fields)
 
     if require == 'all' and provided_fields != fields:
         raise MissingFieldError('resource', fields - provided_fields)
@@ -92,7 +97,8 @@ class JsonMixin(object):
 
     def jsonify(self, **kwds):
         return Response(self.to_json(),
-                        mimetype='application/x-resource+json; charset=utf-8')
+                        mimetype='application/json; charset=utf-8')
+                        #mimetype='application/x-resource+json; charset=utf-8')
 
 
 class Service(object):
