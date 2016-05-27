@@ -23,4 +23,5 @@ setup(name='wmt',
       long_description="Create, save, edit, run collections of connected components.",
       license="Public domain",
       platforms=["any"],
+      scripts=['scripts/wsgi.py', ],
      )
