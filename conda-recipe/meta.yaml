@@ -12,6 +12,7 @@ requirements:
     - flask-sqlalchemy
     - flask-testing
     - flask-login
+    - flask-oauth
     - pyyaml
     - passlib
     - standard_names
@@ -23,6 +24,7 @@ requirements:
     - flask-sqlalchemy
     - flask-testing
     - flask-login
+    - flask-oauth
     - pyyaml
     - passlib
     - standard_names
